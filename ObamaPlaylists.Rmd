@@ -1,0 +1,117 @@
+---
+title: "Obama"
+author: "Juliet Kelson"
+date: "1/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(spotifyr)
+library(tibble)
+# library(qdap)
+# library(syuzhet)
+library(readr)
+library(markovifyR)
+```
+
+```{r}
+
+select_cols <- function(data){
+  
+  return(data %>% select(track.name, track.album.name, track.artists, playlist_name, danceability, energy,key, key_name, mode_name, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, time_signature, track.popularity, track.id))
+}
+
+songs_of_2019 <- get_playlist_audio_features("spotify", "37i9dQZF1DX9uhxIrnqGy3") %>% select_cols()
+songs_of_2019$year <- 2019
+  
+
+
+summer_day_2015 <- get_playlist_audio_features("the white house", "4RGLH5YuS6ldp7aCKaTWas")%>% 
+  select_cols()
+summer_day_2015$year <- 2015
+
+
+summer_night_2015 <- get_playlist_audio_features("the white house", "3fAriv8eMWELCwbWrhMKy2")%>% 
+  select_cols()
+summer_night_2015$year <- 2015
+
+
+summer_day_2016 <- get_playlist_audio_features("the white house", "2Zve7PqFSlGl0ojgGnhFTm")%>% 
+  select_cols()
+summer_day_2016$year <- 2016
+
+
+summer_night_2016 <- get_playlist_audio_features("the white house", "0BczR7bDaoKvn3MGPxS9Lx")%>% 
+  select_cols()
+summer_night_2016$year <- 2016
+
+songs_of_2017 <- get_playlist_audio_features("pitchfork", "3mgr1hhQUqsjWxWY25wt9O")%>% 
+  select_cols()
+songs_of_2017$year <- 2017
+
+songs_of_2018 <- get_playlist_audio_features("nytimes", "6DjwzNXKmHb6ORPguQvD0T")%>% 
+  select_cols()
+songs_of_2018$year <- 2018
+
+summer_2019 <- get_playlist_audio_features("spotify", "37i9dQZF1DWSnWpuB1FNVp")%>% 
+ select_cols()
+summer_2019 <- 2019
+```
+
+```{r}
+all_songs <- rbind(songs_of_2017, songs_of_2018, songs_of_2019, summer_day_2015, summer_night_2015, summer_day_2016, summer_night_2016)
+lyrics <- read.csv("songs_playlists.csv")
+
+all_songs <- all_songs %>% 
+  left_join(lyrics %>% select(track.name, lyrics, language), by = "track.name") %>% 
+  mutate(lyrics = as.character(lyrics))
+```
+
+
+```{r}
+avg_lines = 0
+max_len = 0
+for (i in 1:nrow(all_songs)) {
+  if (!is.na(all_songs$lyrics[i])) {
+    lines <- stringi::stri_split_lines(all_songs$lyrics[i], omit_empty = FALSE)
+      avg_lines = avg_lines + lengths(lines)
+      if (max(sapply(lines[[1]], nchar)) > max_len) {
+        max_len = max(sapply(lines[[1]], nchar))
+      }
+  }
+}
+
+avg_lines = avg_lines/nrow(all_songs)
+```
+
+
+```{r}
+markov_model <-
+  generate_markovify_model(
+    input_text = all_songs$lyrics,
+    markov_state_size = 2L,
+    max_overlap_total = 5,
+    max_overlap_ratio = .5,
+    tries = 500
+  )
+
+markovify_text(
+  markov_model = markov_model,
+  maximum_sentence_length = max_len,
+  output_column_name = 'newSong',
+  count = ceiling(avg_lines*2),
+  tries = 500,
+  only_distinct = TRUE,
+  return_message = TRUE
+)
+
+
+
+```
+
