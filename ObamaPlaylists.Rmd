@@ -92,26 +92,37 @@ avg_lines = avg_lines/nrow(all_songs)
 
 
 ```{r}
-markov_model <-
+english_songs <- all_songs %>% filter(language == "english")
+spanish_songs <- all_songs %>% filter(language == "spanish")
+
+eng_markov_model <-
   generate_markovify_model(
-    input_text = all_songs$lyrics,
+    input_text = english_songs$lyrics,
     markov_state_size = 2L,
     max_overlap_total = 5,
     max_overlap_ratio = .5,
     tries = 500
   )
 
+span_markov_model <-
+  generate_markovify_model(
+    input_text = spanish_songs$lyrics,
+    markov_state_size = 2L,
+    max_overlap_total = 15,
+    max_overlap_ratio = .5,
+    tries = 500
+  )
+
+
 markovify_text(
-  markov_model = markov_model,
-  maximum_sentence_length = max_len,
+  markov_model = span_markov_model,
+  maximum_sentence_length = 150,
   output_column_name = 'newSong',
-  count = ceiling(avg_lines*2),
+  count = ceiling(avg_lines+10),
   tries = 500,
   only_distinct = TRUE,
   return_message = TRUE
 )
-
-
 
 ```
 
