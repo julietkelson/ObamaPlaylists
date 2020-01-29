@@ -95,34 +95,50 @@ avg_lines = avg_lines/nrow(all_songs)
 english_songs <- all_songs %>% filter(language == "english")
 spanish_songs <- all_songs %>% filter(language == "spanish")
 
+set.seed(830)
+
 eng_markov_model <-
   generate_markovify_model(
     input_text = english_songs$lyrics,
     markov_state_size = 2L,
     max_overlap_total = 5,
-    max_overlap_ratio = .5,
+    max_overlap_ratio = .3,
     tries = 500
   )
 
-span_markov_model <-
-  generate_markovify_model(
-    input_text = spanish_songs$lyrics,
-    markov_state_size = 2L,
-    max_overlap_total = 15,
-    max_overlap_ratio = .5,
-    tries = 500
-  )
+# span_markov_model <-
+#   generate_markovify_model(
+#     input_text = spanish_songs$lyrics,
+#     markov_state_size = 2L,
+#     max_overlap_total = 15,
+#     max_overlap_ratio = .5,
+#     tries = 500
+#   )
 
 
-markovify_text(
-  markov_model = span_markov_model,
+new_lines <- markovify_text(
+  markov_model = eng_markov_model,
   maximum_sentence_length = 150,
-  output_column_name = 'newSong',
-  count = ceiling(avg_lines+10),
+  output_column_name = 'newLine',
+  count = 500,
   tries = 500,
-  only_distinct = TRUE,
+  only_distinct = FALSE,
   return_message = TRUE
 )
 
+new_lines$duplicated <- duplicated(new_lines$newLine)
+
 ```
+
+
+<!-- next steps: 
+1. conduct sentiment analysis of songs
+  a. line by line
+  b. get avg lines of each sentiment of corpus
+2. replicate with new_lines data set
+3. Chorus????
+  a. use duplicated lines?
+  b. use lines that match highest sentiment of song?
+  c. split out choruses of original lyrics and do a new markov generation
+-->
 
